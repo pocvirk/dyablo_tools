@@ -1,0 +1,20 @@
+# Python / numba / Jupyter caches
+__pycache__/
+*.py[cod]
+*.nbi
+*.nbc
+.ipynb_checkpoints/
+
+# Upstream Dyablo source clone (separate git repo, not part of these tools)
+dyablo_code/
+
+# Scratch copies and tarball bundles of the files below
+test/
+*.tar
+
+# Simulation data
+*.h5
+
+# Local config
+.claude/
+.DS_Store
