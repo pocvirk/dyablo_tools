@@ -37,6 +37,8 @@ def main():
     p.add_argument("--name", help="simulation name in legends (default: output prefix)")
     p.add_argument("--ini", help="config file (default <rundir>/last.ini)")
     p.add_argument("--stride", type=int, default=1, help="use every N-th snapshot for the averages")
+    p.add_argument("--nproc", type=int, default=int(os.environ.get("SLURM_CPUS_ON_NODE", 1)) // 4 or 1,
+                   help="parallel snapshot readers for the averages (default: cores/4)")
     p.add_argument("--snap", type=int, nargs="*", help="iterations for the galaxy analysis (default: last)")
     p.add_argument("--no-galaxies", action="store_true")
     p.add_argument("--fof-exe", default=os.environ.get("FOF_DYABLO"), help="fof_dyablo executable (or $FOF_DYABLO)")
@@ -56,7 +58,7 @@ def main():
     print(run.summary(), flush=True)
 
     print("IGM averages", flush=True)
-    av = averages.compute_averages(run, out, stride=args.stride)
+    av = averages.compute_averages(run, out, stride=args.stride, nproc=args.nproc)
     averages.plot_averages(av, plotdir, name)
 
     if not args.no_galaxies:

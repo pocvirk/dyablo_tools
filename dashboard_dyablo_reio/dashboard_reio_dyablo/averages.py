@@ -42,24 +42,36 @@ def snapshot_averages(run, grid_file):
                 f_ion=v[ion].sum() / vt, S=s, T=np.nan)
 
 
-def compute_averages(run, outdir, stride=1, verbose=True):
-    """averages table (structured numpy array), reusing the per-snapshot cache."""
+def _averages_row(run, it, grid_file):
+    r = snapshot_averages(run, grid_file)
+    r["iter"] = it
+    return [r[c] for c in COLUMNS]
+
+
+def compute_averages(run, outdir, stride=1, nproc=1, verbose=True):
+    """averages table (structured numpy array), reusing the per-snapshot cache.
+    The pass is I/O bound (~13 s per 50M-cell snapshot on one Lustre OST): nproc > 1 reads snapshots in parallel."""
     cache = os.path.join(outdir, "averages")
     os.makedirs(cache, exist_ok=True)
+    snaps = run.snapshots()[::stride]
+    cached = lambda it, g: os.path.join(cache, f"iter{it:07d}.csv")  # noqa: E731
+    todo = [(it, g) for it, g, _ in snaps
+            if not (os.path.exists(cached(it, g)) and os.path.getmtime(cached(it, g)) > os.path.getmtime(g))]
+    if todo:
+        if nproc > 1:
+            from multiprocessing import Pool
+            with Pool(min(nproc, len(todo))) as pool:
+                rows = pool.starmap(_averages_row, [(run, it, g) for it, g in todo])
+        else:
+            rows = [_averages_row(run, it, g) for it, g in todo]
+        for (it, g), row in zip(todo, rows):
+            np.savetxt(cached(it, g), [row], delimiter=",", header=",".join(COLUMNS), comments="")
+            if verbose:
+                print(f"  averages iter {it:7d} z={row[2]:6.2f} xHII_V={row[3]:.4e} Gamma_ion={row[8]:.3e}", flush=True)
     rows = []
-    for it, g, _ in run.snapshots()[::stride]:
-        fn = os.path.join(cache, f"iter{it:07d}.csv")
-        if os.path.exists(fn) and os.path.getmtime(fn) > os.path.getmtime(g):
-            r = np.genfromtxt(fn, delimiter=",", names=True)
-            rows.append([float(r[c]) for c in COLUMNS])
-            continue
-        r = snapshot_averages(run, g)
-        r["iter"] = it
-        row = [r[c] for c in COLUMNS]
-        np.savetxt(fn, [row], delimiter=",", header=",".join(COLUMNS), comments="")
-        rows.append(row)
-        if verbose:
-            print(f"  averages iter {it:7d} z={r['z']:6.2f} xHII_V={r['xHII_V']:.4e} Gamma_ion={r['Gamma_ion']:.3e}", flush=True)
+    for it, g, _ in snaps:
+        r = np.genfromtxt(cached(it, g), delimiter=",", names=True)
+        rows.append([float(r[c]) for c in COLUMNS])
     tab = np.array(rows)
     out = np.zeros(len(tab), dtype=[(c, float) for c in COLUMNS])
     for i, c in enumerate(COLUMNS):
