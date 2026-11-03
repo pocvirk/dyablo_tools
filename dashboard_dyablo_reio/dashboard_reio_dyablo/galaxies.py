@@ -94,7 +94,7 @@ def fesc_r200(run, grid_file, aexp, centres, r200, ndot_int):
 
 
 def analyse_snapshot(run, it, grid_file, particle_file, outdir, plotdir, simname, fof_exe=None, fof_dir=None,
-                     fof_launcher="", b=0.2, nmin=20, minf=1e7, star_Z=0.05):
+                     fof_launcher="", b=0.2, nmin=20, minf=1e7, star_Z=0.05, sigma8=0.8344, ns=0.9624):
     a = run.snapshot_aexp(grid_file)
     z = np.float64(1 / a - 1)                                          # dbtg does list - z
     cuage = run.age(a) * u.Myr
@@ -119,6 +119,7 @@ def analyse_snapshot(run, it, grid_file, particle_file, outdir, plotdir, simname
     print(f"  iter {it} z={z:.2f}: {len(hmass)} halos, {len(smass)} stars ({smass.sum():.3e} Msun now, "
           f"{sm_init.sum():.3e} formed)", flush=True)
 
+    plot_hmf(hmass.to_value(u.Msun), z, run, mpart.to_value(u.Msun), b, plotdir, simname, sigma8=sigma8, ns=ns)
     dbtg.plotCSFRD(sage * u.Myr, sm_init, cuage, boxh, run.H0, dir=plotdir, simname=simname)
     allstarinds, hind = dbtg.associate_star_halo2(xs, ys, zs, hx, hy, hz, hmass, boxh, Minf=minf * u.Msun)
     hm = hmass[hind]
@@ -171,6 +172,41 @@ def read17_smhm():
     """Read+17 Table 2 clean sample: M*, dM*, M200, dM200+, dM200- (Msun)."""
     t = np.genfromtxt(os.path.join(dbtg.AUX, "obs/read2017/smhm_clean_sample.txt"), usecols=(1, 2, 3, 4, 5))
     return t * np.array([1e7, 1e7, 1e10, 1e10, 1e10])
+
+
+def plot_hmf(mh, z, run, mpart, b, plotdir, simname, sigma8=0.8344, ns=0.9624, nbins=16):
+    """FoF halo mass function vs Sheth-Tormen and Tinker08 (hmf package, Eisenstein-Hu transfer function),
+    as dyablo_fof/plot_hmf.py. mh: all fof_dyablo halos (Msun). sigma8, ns: not in the dyablo ini; defaults are
+    the MUSIC boxA/B/C ICs (KB research/music)."""
+    h = run.h
+    vbox = run.lbox_mpc**3
+    edges = np.linspace(np.log10(mh.min()), np.log10(mh.max()) * 1.001, nbins + 1)
+    counts, _ = np.histogram(np.log10(mh), bins=edges)
+    dlogm = np.diff(edges)
+    lgm = 0.5 * (edges[1:] + edges[:-1])
+    fig, ax = plt.subplots(figsize=(7.5, 5.5), constrained_layout=True)
+    try:
+        from hmf import MassFunction
+        from astropy.cosmology import FlatLambdaCDM
+        cosmo = FlatLambdaCDM(H0=run.H0, Om0=run.om, Ob0=run.ob, Tcmb0=2.725)
+        common = dict(z=z, cosmo_model=cosmo, sigma_8=sigma8, n=ns, transfer_model="EH", dlog10m=0.02,
+                      Mmin=np.log10(mh.min() * h) - 0.5, Mmax=np.log10(mh.max() * h) + 0.5)
+        for model, ls, col in [("SMT", "-", "C0"), ("Tinker08", "--", "C3")]:
+            mf = MassFunction(hmf_model=model, **common)
+            ax.plot(np.log10(mf.m / h), mf.dndlog10m * h**3, ls, color=col, lw=1.5,
+                    label=f"{model} ($\\sigma_8$={sigma8}, $n_s$={ns})")
+    except ImportError:
+        ax.text(0.05, 0.05, "install the hmf package for theory curves", transform=ax.transAxes)
+    k = counts > 0
+    ax.errorbar(lgm[k], counts[k] / (vbox * dlogm[k]), yerr=np.sqrt(counts[k]) / (vbox * dlogm[k]),
+                fmt="o", ms=5, capsize=3, color="k", label=f"{simname} FoF (N={len(mh)})")
+    ax.set_yscale("log")
+    ax.set_xlabel(r"$\log_{10}(M_h / M_\odot)$"); ax.set_ylabel(r"$dn/d\log M_h$ [Mpc$^{-3}$]")
+    ax.set_title(f"halo mass function z={z:.2f} (fof_dyablo b={b}, $m_p$={mpart:.2e} M$_\\odot$)")
+    ax.legend(fontsize=8); ax.grid(alpha=0.3, which="both")
+    plt.figure(fig.number)
+    plt.savefig(os.path.join(plotdir, f"HMF_z={np.around(z, 2)}.pdf"))
+    plt.close(fig)
 
 
 def plot_smhm_fesc(cat, z, run, plotdir, simname):

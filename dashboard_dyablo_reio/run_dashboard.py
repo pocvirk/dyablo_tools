@@ -47,6 +47,8 @@ def main():
     p.add_argument("--fof-nmin", type=int, default=20, help="min halo size in particles")
     p.add_argument("--minf", type=float, default=1e7, help="min halo mass (Msun) for the galaxy analysis")
     p.add_argument("--star-Z", type=float, default=0.05, help="stellar metallicity (Zsun) for BPASS mags")
+    p.add_argument("--sigma8", type=float, default=0.8344, help="sigma_8 of the ICs, for the HMF theory curves")
+    p.add_argument("--ns", type=float, default=0.9624, help="n_s of the ICs, for the HMF theory curves")
     args = p.parse_args()
 
     run = DyabloRun(args.rundir, ini=args.ini)
@@ -71,7 +73,8 @@ def main():
             print(f"galaxies iter {it}", flush=True)
             galaxies.analyse_snapshot(run, it, g, part, out, plotdir, name, fof_exe=args.fof_exe,
                                       fof_launcher=args.fof_launcher, b=args.fof_b, nmin=args.fof_nmin,
-                                      minf=args.minf, star_Z=args.star_Z)
+                                      minf=args.minf, star_Z=args.star_Z,
+                                      sigma8=args.sigma8, ns=args.ns)
     print("plots in", plotdir)
 
 

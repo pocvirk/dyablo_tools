@@ -26,6 +26,7 @@ cosmology (no job logs needed). Output in `<rundir>/dashboard/` (or `--out`):
 |---|---|
 | `PDFs/xHI, xHII, J21, gamma, tau_planck` | IGM history vs observations (dashboard_rc `plotallaverages` set) |
 | `PDFs/UVLF_z=…, CSFRD, Halo_SFR_M_z_z=…` | UV LF (BPASS M_AB1600), cosmic SFRD, halo SFH vs mass (dashboard_rc) |
+| `PDFs/HMF_z=…` | FoF halo mass function vs Sheth-Tormen and Tinker08 (`hmf` package, EH transfer; `--sigma8`/`--ns`, default the MUSIC boxA/B/C ICs 0.8344/0.9624) |
 | `PDFs/smhm_fesc_z=…` | stellar mass – halo mass vs Behroozi+19 (UniverseMachine fit), Stefanon+21 (abundance matching) and Read+17 (z=0 field dwarfs, as in Lewis+23 DUSTiER), ionizing escape fraction through R200 (new) |
 | `averages.txt`, `averages/iterN.csv` | per-snapshot IGM averages (cached: re-runs only read new snapshots) |
 | `halos_iterN.txt` | per-halo catalogue: position, Mh, R200, M*, M_AB1600, intrinsic photon rate, fesc |
@@ -59,7 +60,7 @@ write_particle_variables = particles/vx,particles/vy,particles/vz,particles/mass
 
 ## Install
 
-Python ≥3.10 with `numpy scipy h5py matplotlib astropy pandas`. Build fof_dyablo once in `../dyablo_fof` (see its README for Frontier flags) and pass it with `--fof-exe` or `$FOF_DYABLO`.
+Python ≥3.10 with `numpy scipy h5py matplotlib astropy pandas hmf` (`hmf` only for the HMF theory curves). Build fof_dyablo once in `../dyablo_fof` (see its README for Frontier flags) and pass it with `--fof-exe` or `$FOF_DYABLO`.
 
 ## Changes to the dashboard_rc modules (`dashboard_reio_dyablo/rc/`)
 
