@@ -1,0 +1,15 @@
+# Read, Iorio, Agertz & Fraternali 2017, MNRAS 467, 2019, arXiv:1607.03127, Table 2 ("clean sample" of 11 isolated dIrrs)
+# M* and M200 from rotation-curve fits (coreNFW), z~0. Rogues (inclination, disequilibrium, distance) and Leo T / Carina omitted,
+# as in the SMHM figure of Lewis et al. 2023 (DUSTiER, Fig. 3 left).
+# galaxy  Mstar[1e7 Msun]  dMstar  M200[1e10 Msun]  dM200_plus  dM200_minus
+NGC6822   7.63   1.9     2.0    0.2   0.3
+WLM       1.62   0.4     0.83   0.2   0.2
+DDO52     5.27   1.3     1.2    0.29  0.27
+DDO87     3.3    0.8     1.13   0.27  0.25
+DDO154    0.835  0.2     1.26   0.05  0.05
+DDO210    0.068  0.017   0.068  0.13  0.04
+NGC2366   6.95   1.73    2.4    0.49  0.54
+UGC8508   0.764  0.191   0.63   0.5   0.2
+CVnIdwA   0.41   0.1     0.17   0.1   0.05
+DDO126    1.61   0.4     0.58   0.2   0.1
+DDO168    5.9    1.48    2.1    0.52  0.48

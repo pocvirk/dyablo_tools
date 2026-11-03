@@ -26,7 +26,7 @@ cosmology (no job logs needed). Output in `<rundir>/dashboard/` (or `--out`):
 |---|---|
 | `PDFs/xHI, xHII, J21, gamma, tau_planck` | IGM history vs observations (dashboard_rc `plotallaverages` set) |
 | `PDFs/UVLF_z=…, CSFRD, Halo_SFR_M_z_z=…` | UV LF (BPASS M_AB1600), cosmic SFRD, halo SFH vs mass (dashboard_rc) |
-| `PDFs/smhm_fesc_z=…` | stellar mass – halo mass vs Behroozi+19 (UniverseMachine fit) and Stefanon+21 (abundance matching), ionizing escape fraction through R200 (new) |
+| `PDFs/smhm_fesc_z=…` | stellar mass – halo mass vs Behroozi+19 (UniverseMachine fit), Stefanon+21 (abundance matching) and Read+17 (z=0 field dwarfs, as in Lewis+23 DUSTiER), ionizing escape fraction through R200 (new) |
 | `averages.txt`, `averages/iterN.csv` | per-snapshot IGM averages (cached: re-runs only read new snapshots) |
 | `halos_iterN.txt` | per-halo catalogue: position, Mh, R200, M*, M_AB1600, intrinsic photon rate, fesc |
 | `fof/iterN/` | fof_dyablo run (fof.in, log, catalogue); reused if present |

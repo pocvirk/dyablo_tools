@@ -167,6 +167,12 @@ def stefanon21_shmr():
     return np.loadtxt(os.path.join(dbtg.AUX, "obs/stefanon2021/shmr_table3.txt"))
 
 
+def read17_smhm():
+    """Read+17 Table 2 clean sample: M*, dM*, M200, dM200+, dM200- (Msun)."""
+    t = np.genfromtxt(os.path.join(dbtg.AUX, "obs/read2017/smhm_clean_sample.txt"), usecols=(1, 2, 3, 4, 5))
+    return t * np.array([1e7, 1e7, 1e10, 1e10, 1e10])
+
+
 def plot_smhm_fesc(cat, z, run, plotdir, simname):
     mh, mstar, ndot, fesc = cat[:, 4], cat[:, 7], cat[:, 9], cat[:, 10]
     s = mstar > 0
@@ -190,6 +196,9 @@ def plot_smhm_fesc(cat, z, run, plotdir, simname):
     ax[0].errorbar(mh_s, ms_s, xerr=[mh_s - 10**(r[:, 2] - r[:, 4]), 10**(r[:, 2] + r[:, 3]) - mh_s],
                    yerr=[ms_s - 10**(r[:, 1] - 0.14) / 1.7, 10**(r[:, 1] + 0.14) / 1.7 - ms_s],
                    fmt="s", color="C2", ms=5, label=f"Stefanon+21 z~{zsel:.1f} (/1.7 Salp.)")
+    rd = read17_smhm()
+    ax[0].errorbar(rd[:, 2], rd[:, 0], xerr=[rd[:, 4], rd[:, 3]], yerr=rd[:, 1], fmt="D", mfc="none", color="k",
+                   ms=5, label="Read+17 z=0 field dwarfs")
     shmr = 2 * 0.0297 / ((mhg / 10**11.5)**-1.35 + (mhg / 10**11.5)**0.4) / 1.7
     ax[0].loglog(mhg, shmr * mhg, "C2--", lw=1, label="Stefanon+21 fit z~6-10")
     ax[0].set_xlabel(r"$M_h$ [M$_\odot$]"); ax[0].set_ylabel(r"$M_\star$ [M$_\odot$]")
