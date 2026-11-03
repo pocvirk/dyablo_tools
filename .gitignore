@@ -1,20 +1,11 @@
 # Python / numba / Jupyter caches
 __pycache__/
 *.py[cod]
-*.nbi
-*.nbc
 .ipynb_checkpoints/
-
-# Upstream Dyablo source clone (separate git repo, not part of these tools)
-dyablo_code/
-
-# Scratch copies and tarball bundles of the files below
-test/
-*.tar
+.DS_Store
 
 # Simulation data
 *.h5
 
-# Local config
-.claude/
-.DS_Store
+# Figure written by fast_read_amr/demo_peak_zoom.ipynb
+fast_read_amr/demo_peak_zoom.png
