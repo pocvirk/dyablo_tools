@@ -7,7 +7,7 @@ calibration campaign is analysed the same way with one command.
 
 It reuses PO's ramses-cudaton dashboard ([dashboard_rc](https://github.com/pocvirk/dashboard_rc) @6d58002:
 plotting functions, BPASS v2.2.1 tables, observational data in `aux/`) and adds a dyablo reader layer in front of it.
-Halos come from **fof_dyablo** ([halo_finder_dyablo](https://github.com/pocvirk/halo_finder_dyablo), Roy & Rasera pFoF adapted to dyablo).
+Halos come from **fof_dyablo** ([`../dyablo_fof`](../dyablo_fof/), Roy & Rasera pFoF adapted to dyablo).
 
 ## Usage
 
@@ -59,9 +59,7 @@ write_particle_variables = particles/vx,particles/vy,particles/vz,particles/mass
 
 ## Install
 
-Python ≥3.10 with `numpy scipy h5py matplotlib astropy pandas`. Build fof_dyablo once (Frontier:
-`module load PrgEnv-gnu cray-hdf5-parallel; make FC=ftn MPIFC=ftn LIBS= OPTS="-O3 -cpp -DLONGINT -ffree-line-length-none -fallow-argument-mismatch"`)
-and pass it with `--fof-exe` or `$FOF_DYABLO`.
+Python ≥3.10 with `numpy scipy h5py matplotlib astropy pandas`. Build fof_dyablo once in `../dyablo_fof` (see its README for Frontier flags) and pass it with `--fof-exe` or `$FOF_DYABLO`.
 
 ## Changes to the dashboard_rc modules (`dashboard_reio_dyablo/rc/`)
 

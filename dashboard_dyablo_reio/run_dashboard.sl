@@ -12,7 +12,7 @@
 # run_dashboard.py next to this script (sbatch copies the script, so locate it from the submit dir or $DASHBOARD_DIR)
 HERE=${DASHBOARD_DIR:-${SLURM_SUBMIT_DIR:-$(dirname "$0")}}
 PYENV=${PYENV:-/lustre/orion/ast031/proj-shared/pocvirk/CoDaIII/prod_sr/pocvirk/dyablo/28102026/analysis/pyenv}
-export FOF_DYABLO=${FOF_DYABLO:-/lustre/orion/ast031/proj-shared/pocvirk/CoDaIII/prod_sr/pocvirk/dyablo/28102026/analysis/halo_finder_dyablo/fof}
+export FOF_DYABLO=${FOF_DYABLO:-/lustre/orion/ast031/proj-shared/pocvirk/CoDaIII/prod_sr/pocvirk/dyablo/28102026/analysis/dyablo_tools/dyablo_fof/fof}
 module load cray-python/3.11.7 PrgEnv-gnu cray-hdf5-parallel
 . $PYENV/bin/activate
 python -I -W ignore $HERE/run_dashboard.py "$@"
