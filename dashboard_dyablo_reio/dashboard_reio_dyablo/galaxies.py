@@ -147,9 +147,28 @@ def analyse_snapshot(run, it, grid_file, particle_file, outdir, plotdir, simname
     return cat
 
 
+def behroozi19_smhm(mh, z):
+    """median M* (Msun, Chabrier) at peak halo mass mh (Msun): Behroozi+19 Appendix J, Table J1 True/All/All/Excl."""
+    p = dict(zip(*np.genfromtxt(os.path.join(dbtg.AUX, "obs/behroozi2019/smhm_fit_true_all_all_exclIHL.txt"),
+                                dtype=None, encoding=None)))
+    p = {k: float(v) for k, v in p.items()}
+    a = 1 / (1 + z)
+    m1 = p["M0"] + p["Ma"] * (a - 1) - p["Mlna"] * np.log(a) + p["Mz"] * z
+    eps = p["e0"] + p["ea"] * (a - 1) - p["elna"] * np.log(a) + p["ez"] * z
+    alpha = p["alpha0"] + p["alphaa"] * (a - 1) - p["alphalna"] * np.log(a) + p["alphaz"] * z
+    beta = p["beta0"] + p["betaa"] * (a - 1) + p["betaz"] * z
+    gamma = 10**(p["gamma0"] + p["gammaa"] * (a - 1) + p["gammaz"] * z)
+    x = np.log10(mh) - m1
+    return 10**(m1 + eps - np.log10(10**(-alpha * x) + 10**(-beta * x)) + gamma * np.exp(-0.5 * (x / p["delta0"])**2))
+
+
+def stefanon21_shmr():
+    """Stefanon+21 Table 3 rows (z, logM*, logMh, dlogMh+, dlogMh-, SHMR, +, -), Salpeter IMF."""
+    return np.loadtxt(os.path.join(dbtg.AUX, "obs/stefanon2021/shmr_table3.txt"))
+
+
 def plot_smhm_fesc(cat, z, run, plotdir, simname):
     mh, mstar, ndot, fesc = cat[:, 4], cat[:, 7], cat[:, 9], cat[:, 10]
-    fb = run.ob / run.om
     s = mstar > 0
     fig, ax = plt.subplots(1, 2, figsize=(11, 4.5), constrained_layout=True)
     ax[0].loglog(mh[s], mstar[s], ".", ms=3, alpha=0.5, label=simname)
@@ -158,7 +177,21 @@ def plot_smhm_fesc(cat, z, run, plotdir, simname):
     med = [np.median(mstar[s & (mh >= lo) & (mh < hi)]) if np.any(s & (mh >= lo) & (mh < hi)) else np.nan
            for lo, hi in zip(bins[:-1], bins[1:])]
     ax[0].loglog(c, med, "k-o", ms=4, label="median (halos with stars)")
-    ax[0].loglog(bins[[0, -1]], fb * bins[[0, -1]], "k--", lw=0.8, label=r"$f_b M_h$")
+    # observed relations (Chabrier IMF; Salpeter values / 1.7). Halo masses: B19 Mpeak (virial), S21 abundance matching.
+    mhg = np.logspace(9, 12, 200)
+    ok = mhg >= 10**10.5
+    ax[0].loglog(mhg[ok], behroozi19_smhm(mhg[ok], z), "C1-", lw=1.5, label=f"Behroozi+19 z={z:.1f}")
+    ax[0].loglog(mhg[~ok], behroozi19_smhm(mhg[~ok], z), "C1:", lw=1.5, label="  (extrapolated below fit range)")
+    t = stefanon21_shmr()
+    zs = np.unique(t[:, 0])
+    zsel = zs[np.argmin(np.abs(zs - z))]
+    r = t[t[:, 0] == zsel]
+    mh_s, ms_s = 10**r[:, 2], 10**r[:, 1] / 1.7
+    ax[0].errorbar(mh_s, ms_s, xerr=[mh_s - 10**(r[:, 2] - r[:, 4]), 10**(r[:, 2] + r[:, 3]) - mh_s],
+                   yerr=[ms_s - 10**(r[:, 1] - 0.14) / 1.7, 10**(r[:, 1] + 0.14) / 1.7 - ms_s],
+                   fmt="s", color="C2", ms=5, label=f"Stefanon+21 z~{zsel:.1f} (/1.7 Salp.)")
+    shmr = 2 * 0.0297 / ((mhg / 10**11.5)**-1.35 + (mhg / 10**11.5)**0.4) / 1.7
+    ax[0].loglog(mhg, shmr * mhg, "C2--", lw=1, label="Stefanon+21 fit z~6-10")
     ax[0].set_xlabel(r"$M_h$ [M$_\odot$]"); ax[0].set_ylabel(r"$M_\star$ [M$_\odot$]")
     ax[0].set_title(f"stellar mass - halo mass z={z:.2f}"); ax[0].legend(fontsize=8); ax[0].grid(alpha=0.3)
     f = np.isfinite(fesc)

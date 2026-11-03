@@ -1,0 +1,8 @@
+# Behroozi et al. 2019, MNRAS 488, 3143 (UniverseMachine), arXiv:1806.07893, Appendix J, Table J1
+# median stellar mass - peak halo mass fit, row: SM=True, Q/SF=All, Cen/Sat=All, IHL=Excl. (best fit values)
+# log10(M*/M1) = eps - log10(10^(-alpha x) + 10^(-beta x)) + gamma exp(-0.5 (x/delta)^2),  x = log10(Mpeak/M1)
+# log10(M1/Msun) = M0 + Ma(a-1) - Mlna ln(a) + Mz z ; eps, alpha same form ; beta = b0 + ba(a-1) + bz z ;
+# delta = delta0 ; log10(gamma) = g0 + ga(a-1) + gz z
+# Chabrier IMF; Mpeak = peak historical Bryan & Norman (1998) virial mass; fit range 10^10.5 < Mpeak < 10^15 Msun
+e0 ea elna ez M0 Ma Mlna Mz alpha0 alphaa alphalna alphaz beta0 betaa betaz delta0 gamma0 gammaa gammaz
+-1.430 1.796 1.360 -0.216 12.040 4.675 4.513 -0.744 1.973 -2.353 -1.783 0.186 0.473 -0.884 -0.486 0.407 -1.088 -3.241 -1.079
