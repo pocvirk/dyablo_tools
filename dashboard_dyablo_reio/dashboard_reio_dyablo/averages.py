@@ -84,6 +84,7 @@ def plot_averages(av, plotdir, simname):
     """the ramses-cudaton dashboard IGM plots, fed with dyablo averages."""
     from .rc import dashboard_tools_averages as dbt
     z = av["z"]
+    simname = simname.replace("_", r"\_").replace(" ", r"\ ")   # dbt puts the name inside $\mathrm{...}$
     # dbt.plotgamma/plotJ21 take a volume-averaged J21 and plot Gamma = J*K/xHII, K = 6.38e22*3e8*2.493e-22.
     # Feed J = Gamma_ion * xHII / K, so that the plotted curve is Gamma measured in ionized cells (x_HII > 0.5).
     K = 6.38e22 * 3.e8 * 2.493e-22
