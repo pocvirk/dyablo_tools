@@ -129,8 +129,8 @@ def analyse_snapshot(run, it, grid_file, particle_file, outdir, plotdir, simname
     # escape fractions through R200
     centres = np.array([hx[hind].value, hy[hind].value, hz[hind].value]).T
     r200 = dbtg.R200(hm, run.cosmo).to(u.Mpc).value
-    young = [np.asarray(ii, dtype=int)[sage[np.asarray(ii, dtype=int)] < run.t_life] for ii in allstarinds]
-    ndot = np.array([run.spawn_rate * smass[y].sum() for y in young])
+    ndot_star = run.photon_rate(smass, sage)
+    ndot = np.array([ndot_star[np.asarray(ii, dtype=int)].sum() for ii in allstarinds])
     fesc = np.full(len(hm), np.nan)
     if run.has_fields(grid_file, ["fx_rad", "fy_rad", "fz_rad"]):
         fesc = fesc_r200(run, grid_file, a, centres, r200, ndot)

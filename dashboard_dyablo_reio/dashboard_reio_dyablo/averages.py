@@ -7,7 +7,8 @@ reads the new snapshots. Columns:
   - nH, xnH: volume averages of n_H and x_HII n_H, physical cm^-3 (dyablo cosmo_reio is H only: n_H = rho/m_p)
   - Gamma_V: volume average of Gamma_HI = sigma_N c_rad n_gamma over all cells (s^-1, physical, reduced c_rad as in the code)
   - Gamma_ion: same, over ionized cells only (x_HII > 0.5) -- what Lya-forest measurements probe
-  - S: intrinsic ionizing photon rate of the box (photons/s) = spawn_rate x mass of stars younger than t_life (src field)
+  - S: intrinsic ionizing photon rate of the box (photons/s): source_model = constant: spawn_rate x mass of stars younger
+    than t_life (src field); source_model = bpass: integral of the photon rate density src_ndot
   - T: volume-weighted temperature (K) when the snapshot has the fields for it, else NaN
 """
 import os
@@ -21,7 +22,7 @@ COLUMNS = ["iter", "aexp", "z", "xHII_V", "xHII_M", "nH", "xnH", "Gamma_V", "Gam
 
 def snapshot_averages(run, grid_file):
     a = run.snapshot_aexp(grid_file)
-    d = run.read_grid(grid_file, ["rho", "rho_HII", "e_rad", "src"])
+    d = run.read_grid(grid_file, ["rho", "rho_HII", "e_rad", "src", "src_ndot"])
     v = d["vol"]
     x = d["rho_HII"] / d["rho"]
     vt = v.sum()
@@ -31,7 +32,10 @@ def snapshot_averages(run, grid_file):
     gam = run.sigma_n * run.c_rad * d["e_rad"] / a**3      # e_rad: photons per m^3 (supercomoving) -> s^-1
     ion = x > 0.5
     s = np.nan
-    if "src" in d:
+    if run.source_model == "bpass":
+        if "src_ndot" in d:   # supercomoving photons/m^3/code time -> photons/s
+            s = np.sum(d["src_ndot"] * v) * MPC**3 / (a**2 * run.t_unit)
+    elif "src" in d:
         mstar_young = np.sum(d["src"] * v) * (MPC / run.l_unit)**3 * run.m_unit / 1.98847e30   # Msun
         s = run.spawn_rate * mstar_young
     return dict(aexp=a, z=1 / a - 1,

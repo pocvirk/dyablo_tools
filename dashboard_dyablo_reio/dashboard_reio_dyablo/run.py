@@ -82,10 +82,38 @@ class DyabloRun:
         self.eta_sn = float(g("star_feedback", "eta_snii", 0.0))
         self.t_sn = float(g("star_feedback", "t_snii", 0.0)) * self.t_unit / MYR             # Myr
         self.epsilon_star = float(g("star_formation", "epsilon_star", "nan"))
+        # stellar emission: [rad] source_model = constant (spawn_rate for t_life_star) or bpass (emissivity table)
+        self.source_model = g("rad", "source_model", "constant")
+        if self.source_model == "bpass":
+            self.emissivity_file = g("rad", "emissivity_file")
+            self.emissivity_Z = float(g("rad", "emissivity_z", 0.001))
+            self.emissivity_tmax = float(g("rad", "emissivity_tmax")) * self.t_unit / MYR    # Myr
+            self._read_emissivity()
         self.sigma_n = _sigma_n_blackbody(self.temp_bb)                                      # m2
 
         self._tables()
         self.logs = logs
+
+    # ---------------------------------------------------------------- stellar emission
+    def _read_emissivity(self):
+        """log10 Q(age) [photons/s/Msun_init] at emissivity_Z, interpolated in log Z as ParticleUpdate_NGP_src_bpass."""
+        rows = [[float(v) for v in l.split(",")] for l in open(self.emissivity_file)
+                if l.strip() and not l.lstrip().startswith("#")]
+        na, nz = int(rows[0][0]), int(rows[1][0])
+        ages, zs = np.array(rows[2]), np.array(rows[3])
+        lq = np.log10(np.maximum(np.array(rows[4:4 + nz]), 1e-30))
+        o = np.argsort(zs)
+        lz = np.clip(np.log10(self.emissivity_Z), np.log10(zs[o[0]]), np.log10(zs[o[-1]]))
+        self._em_logage = np.log10(ages)
+        self._em_logq = np.array([np.interp(lz, np.log10(zs[o]), lq[o, i]) for i in range(na)])
+
+    def photon_rate(self, m_now, age):
+        """intrinsic ionizing photon rate (photons/s) of star particles: mass now (Msun), age (Myr) -- the run's model."""
+        if self.source_model != "bpass":
+            return np.where(age < self.t_life, self.spawn_rate * m_now, 0.0)
+        m_init = np.where(age > self.t_sn, m_now / (1 - self.eta_sn), m_now) if self.eta_sn > 0 else m_now
+        q = 10**np.interp(np.log10(np.maximum(age, 1e-30)), self._em_logage, self._em_logq)
+        return np.where(age < self.emissivity_tmax, m_init * q, 0.0)
 
     # ---------------------------------------------------------------- time
     def _tables(self):
@@ -161,7 +189,8 @@ class DyabloRun:
     def summary(self):
         return (f"{self.prefix}: box {self.lbox_mpc:.4f} cMpc ({self.lbox_mpc * self.h:.3f} cMpc/h), H0={self.H0:.3f}, "
                 f"Om={self.om}, Ob={self.ob}; c_rad={self.c_rad / C:.3g}c, {self.spawn_rate:.3g} ph/s/Msun for "
-                f"{self.t_life:g} Myr, T_bb={self.temp_bb:g} K, eps*={self.epsilon_star}, eta_SN={self.eta_sn}")
+                f"{self.t_life:g} Myr" + (f" [overridden: BPASS table Z={self.emissivity_Z:g} to {self.emissivity_tmax:g} Myr]"
+                                         if self.source_model == "bpass" else "") + f", T_bb={self.temp_bb:g} K, eps*={self.epsilon_star}, eta_SN={self.eta_sn}")
 
 
 def _sigma_n_blackbody(temp):
