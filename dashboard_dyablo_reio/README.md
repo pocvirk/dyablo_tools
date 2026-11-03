@@ -45,8 +45,8 @@ Every pdf also gets a png copy.
   restored only for stars older than t_SN (dashboard_rc divided every star by 0.8). Metallicity is not tracked:
   `--star-Z` (default 0.05 Zsun) sets the BPASS metallicity.
 - Halo mass: FoF particle count x Om rho_c L³ / N (dashboard_rc convention); stars within R200 (DM-density based).
-- FoF linking length `--fof-b` (default 0.2): at high z b=0.2 tends to overlink; CoDa III used b=0.15, which helped.
-  Prefer `--fof-b 0.15` for production runs. The fof run is cached per snapshot and b in `fof/iterN_b<b>/`.
+- FoF linking length `--fof-b`, default **0.15**: at high z b=0.2 tends to overlink; CoDa III used b=0.15, which helped.
+  The fof run is cached per snapshot and b in `fof/iterN_b<b>/`.
 - fesc(R200) = outgoing photon flux through the shell [R200, R200 + max(2 dx, R200/4)] / (spawn_rate x mass of stars
   younger than t_life inside R200) -- the run's own emission model. Needs `fx_rad,fy_rad,fz_rad` in `write_variables`.
 

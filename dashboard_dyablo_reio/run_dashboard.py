@@ -43,7 +43,7 @@ def main():
     p.add_argument("--no-galaxies", action="store_true")
     p.add_argument("--fof-exe", default=os.environ.get("FOF_DYABLO"), help="fof_dyablo executable (or $FOF_DYABLO)")
     p.add_argument("--fof-launcher", default="", help='e.g. "srun -n 8" (rank count must be a cube)')
-    p.add_argument("--fof-b", type=float, default=0.2)
+    p.add_argument("--fof-b", type=float, default=0.15, help="FoF linking length (0.2 overlinks at high z; CoDa III used 0.15)")
     p.add_argument("--fof-nmin", type=int, default=20, help="min halo size in particles")
     p.add_argument("--minf", type=float, default=1e7, help="min halo mass (Msun) for the galaxy analysis")
     p.add_argument("--star-Z", type=float, default=0.05, help="stellar metallicity (Zsun) for BPASS mags")

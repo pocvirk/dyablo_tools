@@ -39,7 +39,7 @@ DY
 """
 
 
-def run_fof(run, particle_file, workdir, fof_exe, b=0.2, nmin=20, launcher=""):
+def run_fof(run, particle_file, workdir, fof_exe, b=0.15, nmin=20, launcher=""):
     """run fof_dyablo on one particle snapshot; returns the directory holding the *_masst_* files."""
     out = os.path.join(workdir, "outputs")
     if os.path.isdir(out) and any("masst" in f for f in os.listdir(out)):
@@ -94,7 +94,7 @@ def fesc_r200(run, grid_file, aexp, centres, r200, ndot_int):
 
 
 def analyse_snapshot(run, it, grid_file, particle_file, outdir, plotdir, simname, fof_exe=None, fof_dir=None,
-                     fof_launcher="", b=0.2, nmin=20, minf=1e7, star_Z=0.05, sigma8=0.8344, ns=0.9624):
+                     fof_launcher="", b=0.15, nmin=20, minf=1e7, star_Z=0.05, sigma8=0.8344, ns=0.9624):
     a = run.snapshot_aexp(grid_file)
     z = np.float64(1 / a - 1)                                          # dbtg does list - z
     cuage = run.age(a) * u.Myr
