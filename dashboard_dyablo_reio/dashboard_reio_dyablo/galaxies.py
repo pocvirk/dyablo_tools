@@ -103,7 +103,7 @@ def analyse_snapshot(run, it, grid_file, particle_file, outdir, plotdir, simname
     dbtg.set_cosmology(run.cosmo)
 
     # halos
-    fof_dir = fof_dir or run_fof(run, particle_file, os.path.join(outdir, "fof", f"iter{it:07d}"), fof_exe,
+    fof_dir = fof_dir or run_fof(run, particle_file, os.path.join(outdir, "fof", f"iter{it:07d}_b{b:g}"), fof_exe,
                                  b=b, nmin=nmin, launcher=fof_launcher)
     halos = dbtg.readfof(fof_dir, boxh, ngrid)
     boxsize = run.lbox_mpc * u.Mpc
