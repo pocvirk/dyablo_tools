@@ -192,15 +192,18 @@ def plot_smhm_fesc(cat, z, run, plotdir, simname):
     zs = np.unique(t[:, 0])
     zsel = zs[np.argmin(np.abs(zs - z))]
     r = t[t[:, 0] == zsel]
-    mh_s, ms_s = 10**r[:, 2], 10**r[:, 1] / 1.7
-    ax[0].errorbar(mh_s, ms_s, xerr=[mh_s - 10**(r[:, 2] - r[:, 4]), 10**(r[:, 2] + r[:, 3]) - mh_s],
-                   yerr=[ms_s - 10**(r[:, 1] - 0.14) / 1.7, 10**(r[:, 1] + 0.14) / 1.7 - ms_s],
-                   fmt="s", color="C2", ms=5, label=f"Stefanon+21 z~{zsel:.1f} (/1.7 Salp.)")
+    mh_s = 10**r[:, 2]
+    xe = [mh_s - 10**(r[:, 2] - r[:, 4]), 10**(r[:, 2] + r[:, 3]) - mh_s]
+    for f, mfc, lab in [(1.0, "none", f"Stefanon+21 z~{zsel:.1f} (Salpeter, as published)"),
+                        (1.7, "C2", f"Stefanon+21 z~{zsel:.1f} (/1.7: Salpeter -> Chabrier)")]:
+        ms_s = 10**r[:, 1] / f
+        ax[0].errorbar(mh_s, ms_s, xerr=xe, yerr=[ms_s - 10**(r[:, 1] - 0.14) / f, 10**(r[:, 1] + 0.14) / f - ms_s],
+                       fmt="s", color="C2", mfc=mfc, ms=5, alpha=1.0 if f > 1 else 0.6, label=lab)
     rd = read17_smhm()
     ax[0].errorbar(rd[:, 2], rd[:, 0], xerr=[rd[:, 4], rd[:, 3]], yerr=rd[:, 1], fmt="D", mfc="none", color="k",
                    ms=5, label="Read+17 z=0 field dwarfs")
     shmr = 2 * 0.0297 / ((mhg / 10**11.5)**-1.35 + (mhg / 10**11.5)**0.4) / 1.7
-    ax[0].loglog(mhg, shmr * mhg, "C2--", lw=1, label="Stefanon+21 fit z~6-10")
+    ax[0].loglog(mhg, shmr * mhg, "C2--", lw=1, label="Stefanon+21 fit z~6-10 (/1.7)")
     ax[0].set_xlabel(r"$M_h$ [M$_\odot$]"); ax[0].set_ylabel(r"$M_\star$ [M$_\odot$]")
     ax[0].set_title(f"stellar mass - halo mass z={z:.2f}"); ax[0].legend(fontsize=8); ax[0].grid(alpha=0.3)
     f = np.isfinite(fesc)
