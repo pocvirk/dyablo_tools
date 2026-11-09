@@ -16,12 +16,16 @@ import configparser
 import glob
 import os
 import re
+import sys
 
 import h5py
 import numpy as np
 from astropy.cosmology import FlatLambdaCDM
 import astropy.units as u
 from scipy.integrate import cumulative_trapezoid
+
+# dyablo_tools/fast_read_amr: chunked snapshot reader
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "fast_read_amr"))
 
 MPC = 3.0856775814913673e22    # m
 MYR = 3.15576e13               # s
@@ -168,14 +172,12 @@ class DyabloRun:
             return all(k in f for k in fields)
 
     def cell_centers(self, path):
-        """cell centres (comoving Mpc, wrapped into the box) = mean of the 8 hexahedron nodes."""
-        with h5py.File(path, "r") as f:
-            conn = f["connectivity"][()]
-            nodes = f["coordinates"][()]
-        c = np.zeros((conn.shape[0], 3))
-        for k in range(8):
-            c += nodes[conn[:, k]]
-        return (c / 8.0 * self.l_unit / MPC) % self.lbox_mpc
+        """cell centres (comoving Mpc, wrapped into the box) = mean of the 8 hexahedron nodes, streamed in chunks by
+        dyablo_tools/fast_read_amr (memory ~ the centres, not the full connectivity + node arrays)."""
+        from load_subcube_h5py import load_subcube
+        box = np.full(3, self.lbox)
+        cc, _, _ = load_subcube(path, [], lcube=0, Lbox=box, bx=self.bx, verbose=False)
+        return (cc * self.l_unit / MPC) % self.lbox_mpc
 
     def read_particles(self, path):
         """positions (comoving Mpc), mass (Msun), birth_time (raw), is_star."""

@@ -29,7 +29,8 @@ cosmology (no job logs needed). Output in `<rundir>/dashboard/` (or `--out`):
 | `PDFs/HMF_z=…` | FoF halo mass function vs Sheth-Tormen and Tinker08 (`hmf` package, EH transfer; `--sigma8`/`--ns`, default the MUSIC boxA/B/C ICs 0.8344/0.9624) |
 | `PDFs/smhm_fesc_z=…` | stellar mass – halo mass vs Behroozi+19 (UniverseMachine fit), Stefanon+21 (abundance matching) and Read+17 (z=0 field dwarfs, as in Lewis+23 DUSTiER), ionizing escape fraction through R200 (new) |
 | `averages.txt`, `averages/iterN.csv` | per-snapshot IGM averages (cached: re-runs only read new snapshots) |
-| `halos_iterN.txt` | per-halo catalogue: position, Mh, R200, M*, M_AB1600, intrinsic photon rate, fesc |
+| `PDFs/flows_z=…` | gas inflow and outflow rates through 0.5 and 1 R200 vs halo mass, with the 10 Myr SFR and the Dekel+09 mean baryonic accretion rate; outflow/inflow ratio |
+| `halos_iterN.txt` | per-halo catalogue: position, Mh, R200, M*, M_AB1600, intrinsic photon rate, fesc, inflow and outflow at 0.5 and 1 R200 |
 | `fof/iterN_b<b>/` | fof_dyablo run (fof.in, log, catalogue); reused if present |
 
 Every pdf also gets a png copy.
@@ -49,6 +50,12 @@ Every pdf also gets a png copy.
   The fof run is cached per snapshot and b in `fof/iterN_b<b>/`.
 - fesc(R200) = outgoing photon flux through the shell [R200, R200 + max(2 dx, R200/4)] / (spawn_rate x mass of stars
   younger than t_life inside R200) -- the run's own emission model. Needs `fx_rad,fy_rad,fz_rad` in `write_variables`.
+- Gas flows (`flows.py`): Mdot through r = 0.5 and 1 R200 = sum over the shell [r - w/2, r + w/2], w = max(2 dx, r/5),
+  of m_cell v_r / w. v_r = physical radial velocity relative to the halo (mass-weighted mean particle velocity within
+  R200) + Hubble flow. v_r < 0 is inflow, v_r > 0 outflow; no velocity cut (all outgoing gas counts). Halos with
+  r < 3 dx are left out (nan in the catalogue). Needs `rho_vx,rho_vy,rho_vz` in `write_variables`, or the checkpoint
+  of the same iteration (`restart_<prefix>_<iter>.h5`, same cell order) in the output directory.
+- Cell centres come from `../fast_read_amr` (chunked reader), computed once per snapshot for fesc and the flows.
 
 Recommended dyablo output settings for runs analysed with this dashboard:
 ```ini
@@ -56,7 +63,7 @@ Recommended dyablo output settings for runs analysed with this dashboard:
 output_slice_var = aexp
 output_timeslice = 0.005
 [output]
-write_variables = rho,rho_HII,e_rad,fx_rad,fy_rad,fz_rad,src,zreion,level
+write_variables = rho,rho_HII,rho_vx,rho_vy,rho_vz,e_tot,e_rad,fx_rad,fy_rad,fz_rad,src,zreion,level
 write_particle_variables = particles/vx,particles/vy,particles/vz,particles/mass,particles/birth_time
 ```
 

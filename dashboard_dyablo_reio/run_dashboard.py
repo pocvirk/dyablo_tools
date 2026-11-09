@@ -6,7 +6,7 @@
 <rundir> is the dyablo run directory (holds last.ini and the snapshots). Produces in <out>/PDFs (pdf + png):
   IGM (all snapshots): xHI, xHII, J21, Gamma (ionized cells), tau_es          -- ramses-cudaton dashboard plots
   galaxies (--snap, default last snapshot with particles): UV LF, CSFRD, halo SFH vs M  -- idem, via fof_dyablo halos
-                                                           + stellar mass-halo mass, fesc(R200)
+                                                           + stellar mass-halo mass, fesc(R200), gas inflow/outflow at 0.5/1 R200
 """
 import argparse
 import os

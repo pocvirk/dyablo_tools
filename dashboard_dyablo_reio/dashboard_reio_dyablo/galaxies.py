@@ -3,8 +3,9 @@
 Halos: fof_dyablo (Roy & Rasera pFoF adapted to dyablo, github.com/pocvirk/halo_finder_dyablo), run here on the
 snapshot particle file if its catalogue is not there yet. Stars are attached to halos within R200 (dbtg.associate_star_halo2),
 magnitudes come from the BPASS v2.2.1 tables (dbtg.computeallmags), and the LF / CSFRD / halo SFH plots are dbtg's.
-dyablo-specific additions: stellar mass - halo mass relation, and the ionizing escape fraction through the R200 sphere
-(needs the fx_rad/fy_rad/fz_rad fields in the snapshot).
+dyablo-specific additions: stellar mass - halo mass relation, the ionizing escape fraction through the R200 sphere
+(needs the fx_rad/fy_rad/fz_rad fields in the snapshot), and gas inflow / outflow rates through 0.5 and 1 R200 (flows.py;
+needs rho_v in the snapshot or the checkpoint of the same iteration).
 """
 import os
 import subprocess
@@ -17,6 +18,7 @@ import matplotlib.pyplot as plt
 from scipy.spatial import cKDTree
 
 from .run import MPC, MYR
+from . import flows
 from .rc import dashboard_tools_galaxies as dbtg
 
 FOF_IN = """{root}
@@ -70,12 +72,16 @@ def star_arrays(run, particle_file, aexp):
     return pos[st], m, m_init, age
 
 
-def fesc_r200(run, grid_file, aexp, centres, r200, ndot_int):
+def cell_tree(run, grid_file):
+    """cell centres (cMpc) and their periodic KD-tree, shared by fesc and the flows."""
+    cc = run.cell_centers(grid_file)
+    return cc, cKDTree(cc, boxsize=run.lbox_mpc * (1 + 1e-12))
+
+
+def fesc_r200(run, grid_file, aexp, centres, r200, ndot_int, cc, tree):
     """outgoing ionizing photon rate through the shell [R200, R200+w] / intrinsic rate, per halo."""
     d = run.read_grid(grid_file, ["fx_rad", "fy_rad", "fz_rad"])
-    cc = run.cell_centers(grid_file)
     L = run.lbox_mpc
-    tree = cKDTree(cc, boxsize=L * (1 + 1e-12))
     out = np.full(len(r200), np.nan)
     conv = MPC**3 / MYR / aexp**2 * (run.l_unit / MPC) / (run.t_unit / MYR)   # code flux x Mpc^3 / Mpc -> photons/s
     for k in np.where(ndot_int > 0)[0]:
@@ -133,16 +139,35 @@ def analyse_snapshot(run, it, grid_file, particle_file, outdir, plotdir, simname
     ndot_star = run.photon_rate(smass, sage)
     ndot = np.array([ndot_star[np.asarray(ii, dtype=int)].sum() for ii in allstarinds])
     fesc = np.full(len(hm), np.nan)
+    cc = tree = None
     if run.has_fields(grid_file, ["fx_rad", "fy_rad", "fz_rad"]):
-        fesc = fesc_r200(run, grid_file, a, centres, r200, ndot)
+        cc, tree = cell_tree(run, grid_file)
+        fesc = fesc_r200(run, grid_file, a, centres, r200, ndot, cc, tree)
     else:
         print("  no fx_rad/fy_rad/fz_rad in this snapshot: fesc skipped")
 
+    # gas inflow / outflow through 0.5 and 1 R200
+    fracs = (0.5, 1.0)
+    inflow = outflow = np.full((len(hm), len(fracs)), np.nan)
+    if flows.has_gas_velocity(run, grid_file, it):
+        if cc is None:
+            cc, tree = cell_tree(run, grid_file)
+        vh = flows.halo_velocities(run, particle_file, centres, r200)
+        inflow, outflow, unres = flows.halo_flows(run, flows.read_gas(run, grid_file, it), cc, tree, a, centres,
+                                                  r200, vh, fracs)
+        sfr = np.array([sm_init[np.asarray(ii, dtype=int)][sage[np.asarray(ii, dtype=int)] < 10].sum()
+                        for ii in allstarinds]) / 1e7                                   # Msun/yr over 10 Myr
+        flows.plot_flows(hm.value, sfr, inflow, outflow, unres, fracs, z, run, plotdir, simname)
+        inflow, outflow = np.where(unres, np.nan, inflow), np.where(unres, np.nan, outflow)
+    else:
+        print("  no gas velocities (snapshot or same-iteration checkpoint): flows skipped")
+
     cat = np.column_stack([halos[hind, 0], centres, hm.value, r200, [len(i) for i in allstarinds], mstar,
-                           np.where(mags > -99, mags, np.nan), ndot, fesc])
+                           np.where(mags > -99, mags, np.nan), ndot, fesc, inflow, outflow])
     np.savetxt(os.path.join(outdir, f"halos_iter{it:07d}.txt"), cat,
                header=f"{simname} iter {it} z={z:.4f}: fof_dyablo b={b}, Mh>{minf:g} Msun, stars within R200\n"
-                      "fof_id x y z[cMpc] Mh[Msun] R200[cMpc] nstar Mstar_now[Msun] M_AB1600 Ndot_int[1/s] fesc_R200",
+                      "fof_id x y z[cMpc] Mh[Msun] R200[cMpc] nstar Mstar_now[Msun] M_AB1600 Ndot_int[1/s] fesc_R200 "
+                      "inflow_0.5R200 inflow_R200 outflow_0.5R200 outflow_R200 [Msun/yr; nan: r < 3 dx]",
                fmt="%.6e")
     plot_smhm_fesc(cat, z, run, plotdir, simname)
     return cat
